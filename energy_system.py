@@ -1,13 +1,10 @@
 import json
-import sys
 from datetime import datetime
 import ast
  
 # Global state
 meters = {}
-RATE_TIER_1 = 3.5
-RATE_TIER_2 = 5.0
-RATE_TIER_3 = 7.5
+RATES = {"tier1": 3.5, "tier2": 5.0, "tier3": 7.5}
 SPIKE_LIMIT = 500
  
 def record_reading(meter_id, units, history=None):
@@ -27,10 +24,8 @@ def compute_bill(meter_id, tier_rates):
         return 100 * tier_rates[0] + 200 * tier_rates[1] + (units - 300) * tier_rates[2]
  
 def raise_rates(percent):
-    global RATE_TIER_1, RATE_TIER_2, RATE_TIER_3
-    RATE_TIER_1 = RATE_TIER_1 * (1 + percent / 100)
-    RATE_TIER_2 = RATE_TIER_2 * (1 + percent / 100)
-    RATE_TIER_3 = RATE_TIER_3 * (1 + percent / 100)
+    for tier in RATES:
+        RATES[tier] *= 1 + percent / 100
  
 def flag_spikes():
     spikes = []
@@ -40,17 +35,17 @@ def flag_spikes():
     return spikes
  
 def load_meter_data(file="meters.json"):
-    global meters
     try:
-        f = open(file)
-        meters = json.loads(f.read())
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.loads(f.read())
+        meters.clear()
+        meters.update(data)
     except (IOError, OSError, json.JSONDecodeError):
-        meters = {}
+        meters.clear()
  
 def save_meter_data(file="meters.json"):
-    f = open(file, "w")
-    f.write(json.dumps(meters))
-    f.close()
+    with open(file, "w", encoding="utf-8") as f:
+        f.write(json.dumps(meters))
  
 def main():
     record_reading("M-01", 120)
@@ -58,7 +53,7 @@ def main():
     h = record_reading("M-03", -50)
     print("Readings stored so far:", len(h))
     raise_rates(10)
-    rates = [RATE_TIER_1, RATE_TIER_2, RATE_TIER_3]
+    rates = [RATES["tier1"], RATES["tier2"], RATES["tier3"]]
     print("Bill M-01: %.2f" % compute_bill("M-01", rates))
     print("Bill M-03: %.2f" % compute_bill("M-03", rates))
     print("Spikes:", flag_spikes())
