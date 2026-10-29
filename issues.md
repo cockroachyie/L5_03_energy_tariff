@@ -1,4 +1,4 @@
-# Static Analysis Issues — energy_system.py
+# Static Analysis Issues in energy_system.py
 
 | Issue | Type | Line(s) | Description | Fix Approach |
 |---|---|---|---|---|
